@@ -4,8 +4,13 @@ Run: python main.py
 """
 import os
 import sys
+import io
 from pathlib import Path
 from datetime import datetime
+
+# Force UTF-8 encoding for stdout/stderr
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # Load .env before anything else
 from dotenv import load_dotenv
@@ -19,33 +24,30 @@ from rich import print as rprint
 
 from crew_orchestrator import run_crew
 
-console = Console()
+# Create console with UTF-8 support
+console = Console(force_terminal=True, legacy_windows=False, width=100)
 
 
 BANNER = """
-╔══════════════════════════════════════════════════════════════╗
-║          AIQE - Agentic AI QE Framework (CrewAI)            ║
-║        Powered by NVIDIA Nemotron + CrewAI Agents           ║
-╠══════════════════════════════════════════════════════════════╣
-║  Agents available:                                          ║
-║  🔍 Business Analyst   - Phân tích user story từ Jira      ║
-║  ✅ Manual Tester      - Viết manual test cases             ║
-║  🤖 Automation Tester  - Viết TestNG automation code        ║
-║  ☕ Java Maven Expert  - Tạo project template/example       ║
-╠══════════════════════════════════════════════════════════════╣
-║  Tip: Cung cấp Jira ticket key (vd: SCRUM-100) để agent    ║
-║       tự động đọc user story từ Jira                       ║
-╚══════════════════════════════════════════════════════════════╝
+AIQE - Agentic AI QE Framework (CrewAI)
+Powered by NVIDIA Nemotron + CrewAI Agents
+--------------------------------------------------
+Agents available:
+  * Business Analyst - Analyze user stories from Jira
+  * Manual Tester   - Write manual test cases
+  * Automation Tester - Write TestNG automation code
+  * Java Maven Expert - Create project templates
+
+Tip: Provide a Jira ticket key (e.g., SCRUM-100) to auto-read the user story from Jira
 """
 
 EXAMPLES = """
-Ví dụ request:
-  • "Phân tích user story SCRUM-100"
-  • "Viết manual test case cho SCRUM-100"
-  • "Tạo automation test code cho SCRUM-100 dùng TestNG"
-  • "Tạo Java TestNG Maven project example"
-  • "Viết test case cho chức năng login"
-  • "Analyze requirements in SCRUM-42 and write manual test cases"
+Example requests:
+  * "Phân tích user story SCRUM-100"
+  * "Viết manual test case cho SCRUM-100"
+  * "Tạo automation test code cho SCRUM-100 dùng TestNG"
+  * "Tạo Java TestNG Maven project example"
+  * "Analyze requirements in SCRUM-100 and write manual test cases"
 """
 
 
@@ -65,7 +67,7 @@ def validate_env():
     required = ["API_KEY", "JIRA_URL", "JIRA_USER", "JIRA_TOKEN"]
     missing = [k for k in required if not os.getenv(k) or "your" in (os.getenv(k) or "").lower() or os.getenv(k) == "my_key_here"]
     if missing:
-        console.print(f"[yellow]⚠️  Warning: These .env values may not be set: {', '.join(missing)}[/yellow]")
+        console.print(f"[yellow]Warning: These .env values may not be set: {', '.join(missing)}[/yellow]")
         console.print("[yellow]   Edit .env file with your real credentials.[/yellow]\n")
 
 
@@ -78,25 +80,25 @@ def main():
 
     while True:
         try:
-            user_input = Prompt.ask("[bold blue]📋 Your request[/bold blue]").strip()
+            user_input = Prompt.ask("[bold blue]Your request[/bold blue]").strip()
 
             if not user_input:
                 continue
 
             if user_input.lower() in ("quit", "exit", "q"):
-                console.print("[yellow]Goodbye! 👋[/yellow]")
+                console.print("[yellow]Goodbye![/yellow]")
                 sys.exit(0)
 
             if user_input.lower() == "help":
                 console.print(EXAMPLES)
                 continue
 
-            console.print(f"\n[bold cyan]🚀 Processing request...[/bold cyan]\n")
+            console.print("\n[bold cyan]Processing request...[/bold cyan]\n")
 
             result = run_crew(user_input)
 
             console.print("\n" + "="*60)
-            console.print("[bold green]✅ Result:[/bold green]")
+            console.print("[bold green]Result:[/bold green]")
             console.print("="*60)
 
             # Try to render as Markdown
@@ -107,12 +109,12 @@ def main():
 
             # Save output
             output_file = save_output(user_input, result)
-            console.print(f"\n[dim]💾 Output saved: {output_file}[/dim]\n")
+            console.print(f"\n[dim]Output saved: {output_file}[/dim]\n")
 
         except KeyboardInterrupt:
             console.print("\n[yellow]Interrupted. Type 'exit' to quit.[/yellow]")
         except Exception as e:
-            console.print(f"\n[red]❌ Error: {str(e)}[/red]")
+            console.print(f"\n[red]Error: {str(e)}[/red]")
             console.print("[dim]Check your .env credentials and try again.[/dim]\n")
 
 
